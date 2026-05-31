@@ -1,29 +1,33 @@
 #!/bin/bash
-# Install arch-skill locally
-# Works with: OpenCode
-# Usage: bash install.sh
+# Install arch-skill for OpenCode
+# Works with: OpenCode, Claude Code
+# Usage:
+#   Remote: curl -fsSL https://raw.githubusercontent.com/m20191201/arch-skill/main/install.sh | bash
+#   Local:  bash install.sh
 
 set -e
 
-SKILL_SRC="$(cd "$(dirname "$0")" && pwd)"
 DEST="${HOME}/.config/opencode/skills/arch"
+REPO="https://github.com/m20191201/arch-skill.git"
+BRANCH="main"
 
 echo "Installing arch-skill to ${DEST}..."
+mkdir -p "$(dirname "${DEST}")"
 
-mkdir -p "${DEST}"
+if [ -d "${DEST}/.git" ]; then
+    echo "Updating existing installation..."
+    git -C "${DEST}" pull --ff-only origin "${BRANCH}"
+elif [ -d "${DEST}" ]; then
+    echo "Directory exists but no git repo. Removing and re-cloning..."
+    rm -rf "${DEST}"
+    git clone --depth 1 -b "${BRANCH}" "${REPO}" "${DEST}"
+else
+    git clone --depth 1 -b "${BRANCH}" "${REPO}" "${DEST}"
+fi
 
-# Copy all skill files (avoid recursive copy of self into dest)
-for item in "${SKILL_SRC}"/* "${SKILL_SRC}"/.[!.]*; do
-    [ -e "$item" ] || continue
-    base="$(basename "$item")"
-    [ "$base" = ".git" ] && continue
-    cp -r "$item" "${DEST}/"
-done
-
-echo "Done."
 echo ""
-echo "Skill installed at: ${DEST}"
-echo "Restart your AI assistant to load the skill."
+echo "Done. Restart your AI assistant to load the skill."
 echo ""
-echo "To verify:"
-echo "  ls ${DEST}/SKILL.md"
+echo "Repo:    ${REPO}"
+echo "Path:    ${DEST}"
+echo "Verify:  ls ${DEST}/SKILL.md"
